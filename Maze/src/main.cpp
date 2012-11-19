@@ -11,7 +11,12 @@
 using namespace boost;
 using namespace std;
 
-typedef adjacency_list<listS, vecS, undirectedS> MyGraph;
+
+struct ParentInfo {
+	int parent;
+};
+
+typedef adjacency_list<listS, vecS, undirectedS, ParentInfo> MyGraph;
 typedef graph_traits<MyGraph>::vertex_descriptor MyVertex;
 typedef graph_traits<MyGraph>::edge_descriptor MyEdge;
 
@@ -47,27 +52,23 @@ class MyVisitor : public default_dfs_visitor {
 
 
 	public:
-    MyVisitor(int si, int ei, VertexMap vm, ReverseVertexMap rvm, VectorEdges ie) :
-      startIndex(si),
-      endIndex(ei),
-      vertexMap(vm),
-      reverseVertexMap(rvm),
-      inputEdges(ie),
-      recording(false) {}
-
+    MyVisitor(MyGraph& g) :
+		graph(g) {}
 	void tree_edge(MyEdge e, const MyGraph& g) {
 		int sourceIndex = source(e, g);
 		int targetIndex = target(e, g);
-		cout << "Going from : " << sourceIndex << " to " << targetIndex << endl;
+		
+		cout << "Setting the parent of " << targetIndex << " to " << sourceIndex << endl;
+
+		graph[targetIndex].parent = sourceIndex;
+	}
+	
+	int getParent(int index) {
+		return graph[3].parent;
 	}
 
   private:
-    int startIndex, endIndex;
-    bool recording;
-    vector<int> vertices;
-    VertexMap vertexMap;
-    ReverseVertexMap reverseVertexMap;
-    VectorEdges inputEdges;
+  	MyGraph graph;
 };
 
 const string FILENAME = "data/input.txt";
@@ -80,17 +81,16 @@ int mapEdgeIndex(int index, bool isLeavingStart);
 
 
 int main() {
-  ReverseVertexMap reverseVertices;
+	ReverseVertexMap reverseVertices;
 	VertexMap vertices;
-  VectorEdges inputEdges;
+	VectorEdges inputEdges;
 	MyGraph g;
-  int numEdges = readInputFile(g, vertices, reverseVertices, inputEdges);
-  processAndAddEdges(g, vertices, inputEdges); 
-  cout << "Edges again: " << numEdges << endl;
-	MyVisitor vis(0, numEdges, vertices, reverseVertices, inputEdges);
-  depth_first_search(g, boost::visitor(vis));
+	int numEdges = readInputFile(g, vertices, reverseVertices, inputEdges);
+	processAndAddEdges(g, vertices, inputEdges); 
+	MyVisitor vis(g);
+	depth_first_search(g, boost::visitor(vis));
 
-
+	cout << "Parent: " << vis.getParent(85) << endl;
 	return 0;
 }
 
