@@ -13,6 +13,7 @@ using namespace std;
 
 typedef adjacency_list<listS, vecS, undirectedS> MyGraph;
 typedef graph_traits<MyGraph>::vertex_descriptor MyVertex;
+typedef graph_traits<MyGraph>::edge_descriptor MyEdge;
 
 class GraphEdge {
   public:
@@ -21,17 +22,21 @@ class GraphEdge {
       vertex2(v2),
       edgeCount(ec),
       color(c),
-      type(t) {}
+      type(t),
+	  parent(-1) {}
 
    int getStartVertex() { return vertex; }
    int getEndVertex() { return vertex2; }
    int getEdgeCount() { return edgeCount; }
    char getColor() { return color; }
    char getType() { return type; }
+   int getParent() { return parent; }
+   void setParent(int e) { parent = e; }
 
   private:
     int vertex, vertex2, edgeCount;
     char color, type;
+	int parent;
 };
 
 typedef map<int, char> ReverseVertexMap;
@@ -50,54 +55,12 @@ class MyVisitor : public default_dfs_visitor {
       inputEdges(ie),
       recording(false) {}
 
-		void discover_vertex(MyVertex v, const MyGraph& g) {
-			int index = v;
-//      cout << "Discovered a vertex\n";
-      if (index == startIndex) {
-        recording = true;
-        cout << "Recording : " << index << endl;
-      }
-      if (recording == true) {
-        vertices.push_back(index);
-      }
-      if (index == endIndex) {
-        recording = false;
+	void tree_edge(MyEdge e, const MyGraph& g) {
+		int sourceIndex = source(e, g);
+		int targetIndex = target(e, g);
+		cout << "Going from : " << sourceIndex << " to " << targetIndex << endl;
+	}
 
-        vector<char> path;
-        path.push_back(reverseVertexMap[0]);
-        //Output path:
-        cout << "This path: " << endl;
-        for (int i = 0; i < vertices.size(); ++i) {
-          int pathIndex = vertices.at(i);
-          cout << " <- " << pathIndex;
-          if (pathIndex % 2 == 0) {
-            //normal traversal
-            pathIndex = (pathIndex / 2);
-            GraphEdge e = inputEdges.at(pathIndex);
-            if (reverseVertexMap.find(e.getEndVertex()) != reverseVertexMap.end()) {
-              char c = reverseVertexMap[e.getEndVertex()];
-              path.push_back(c);
-            } else {
-              cerr << "Unknown error linking pathIndex to character value\n";
-            }
-          } else {
-            //backwards
-            pathIndex = (pathIndex - 1) / 2;
-            GraphEdge e = inputEdges.at(pathIndex);
-            if (reverseVertexMap.find(e.getStartVertex()) != reverseVertexMap.end()) {
-              char c = reverseVertexMap[e.getStartVertex()];
-              path.push_back(c);
-            }
-          }
-        }
-
-        cout << "\n\nBEGIN PATH: \n";
-        for (int i = 0; i < path.size(); ++i)
-          cout << path.at(i) << " -> ";
-        cout << "\n\nEND PATH\n";
-      }
-      return;
-		}
   private:
     int startIndex, endIndex;
     bool recording;
@@ -128,9 +91,6 @@ int main() {
   depth_first_search(g, boost::visitor(vis));
 
 
-  ofstream file("log.txt");
-  write_graphviz(file, g);
-  file.close();
 	return 0;
 }
 
@@ -158,7 +118,7 @@ int readInputFile(MyGraph& g, VertexMap& vertices, ReverseVertexMap& reverseVert
       reverseVertices[vertexCount] = v2;
     }
     
-    cout << "Recording edge from " << v1 << " to " << v2 << " index: " << edgeCount << endl;
+//    cout << "Recording edge from " << v1 << " to " << v2 << " index: " << edgeCount << endl;
     inputEdges.push_back(GraphEdge(vertices[v1], vertices[v2], edgeCount++, color, type));
 		//create the edge between the two vertices
 		//add_edge(vertices[v1], vertices[v2], g);
